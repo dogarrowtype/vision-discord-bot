@@ -16,6 +16,8 @@ DISCORD_BOT_TOKEN = os.getenv('DISCORD_BOT_TOKEN')
 # OpenAI API Key
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
+OPENAI_BASE_URL = os.getenv('OPENAI_BASE_URL')
+
 # Parse the list of channel IDs from the environment variable and convert it to a set
 CHANNEL_IDS = os.getenv('CHANNEL_IDS')
 if CHANNEL_IDS:
