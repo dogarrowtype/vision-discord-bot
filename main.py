@@ -27,12 +27,6 @@ if CHANNEL_IDS:
 else:
     CHANNEL_IDS = None
 
-ALLOWED_ROLE_IDS = os.getenv('CHANNEL_IDS')
-if ALLOWED_ROLE_IDS:
-    ALLOWED_ROLE_IDS = set(map(int, CHANNEL_IDS.split(',')))
-else:
-    ALLOWED_ROLE_IDS = None
-
 # Starting message for image analysis
 STARTING_MESSAGE = os.getenv('STARTING_MESSAGE', "What’s in this image? If the image is mostly text, please provide the full text.")
 
@@ -61,7 +55,7 @@ openai.api_base = OPENAI_BASE_URL
 
 async def describe_image(image_url):
     try:
-        logger.info("Sending request to OpenAI for image analysis...")
+        logger.info("Sending request to the model for image analysis...")
         
         # Send a chat completion request to OpenAI
         response = openai.ChatCompletion.create(
@@ -81,7 +75,7 @@ async def describe_image(image_url):
             max_tokens=MAX_TOKENS,
         )
 
-        logger.info("Received response from OpenAI.")
+        logger.info("Received response from the model.")
 
         # Extracting and returning the response
         if response.choices and len(response.choices) > 0:
@@ -93,11 +87,11 @@ async def describe_image(image_url):
             
             return description_chunks
         else:
-            return ["Failed to obtain a description from OpenAI."]
+            return ["Failed to obtain a description from the model."]
 
     except Exception as e:
-        logger.error(f"Error analyzing image with OpenAI: {e}")
-        return ["Error analyzing image with OpenAI."]
+        logger.error(f"Error analyzing image with model: {e}")
+        return ["Error analyzing image with model."]
 
 @bot.event
 async def on_ready():
@@ -106,10 +100,10 @@ async def on_ready():
 
 @bot.event
 async def on_message(message):
-    # Ignore messages sent by the bot
+    # Ignore messages sent by the bot and in dms
     if (
         message.author == bot.user
-        or (ALLOWED_ROLE_IDS and (message.channel.type == discord.ChannelType.private or not any(role.id in ALLOWED_ROLE_IDS for role in message.author.roles)))
+        or message.channel.type == discord.ChannelType.private
     ):
         return
 
