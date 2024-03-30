@@ -6,6 +6,8 @@ import openai
 import asyncio
 import logging
 import re
+import base64
+import requests
 
 # Load environment variables from .env file
 load_dotenv()
@@ -66,7 +68,7 @@ async def describe_image(image_url):
                         {
                             "type": "image_url",
                             "image_url": {
-                                "url": image_url,
+                                "url": {"url": f"data:image/jpeg;base64,{base64.b64encode(requests.get(image_url).content).decode('utf-8')}"},
                             },
                         },
                     ],
