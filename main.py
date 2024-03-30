@@ -27,7 +27,7 @@ if CHANNEL_IDS:
 else:
     CHANNEL_IDS = None
 
-ALLOWED_ROLE_IDS = os.getenv('ALLOWED_ROLE_IDS')
+ALLOWED_ROLE_IDS = tuple(int(id) for id in env["ALLOWED_ROLE_IDS"].split(",") if id)
 
 # Starting message for image analysis
 STARTING_MESSAGE = os.getenv('STARTING_MESSAGE', "What’s in this image? If the image is mostly text, please provide the full text.")
