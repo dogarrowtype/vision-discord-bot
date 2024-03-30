@@ -49,6 +49,7 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 
 # Ensure the OpenAI API key is set
 openai.api_key = OPENAI_API_KEY
+openai.api_base = OPENAI_BASE_URL
 
 async def describe_image(image_url):
     try:
