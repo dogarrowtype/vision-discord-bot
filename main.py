@@ -95,7 +95,7 @@ async def describe_image(image_url):
 
 @bot.event
 async def on_ready():
-    await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name='Everything 👀'))
+    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name='Everything 👀'))
     logger.info(f'{bot.user} has connected to Discord!')
 
 @bot.event
