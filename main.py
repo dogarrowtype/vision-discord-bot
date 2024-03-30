@@ -27,6 +27,8 @@ if CHANNEL_IDS:
 else:
     CHANNEL_IDS = None
 
+ALLOWED_ROLE_IDS = os.getenv('ALLOWED_ROLE_IDS')
+
 # Starting message for image analysis
 STARTING_MESSAGE = os.getenv('STARTING_MESSAGE', "What’s in this image? If the image is mostly text, please provide the full text.")
 
@@ -101,7 +103,10 @@ async def on_ready():
 @bot.event
 async def on_message(message):
     # Ignore messages sent by the bot
-    if message.author == bot.user:
+    if (
+        message.author == bot.user
+        or (ALLOWED_ROLE_IDS and (message.channel.type == discord.ChannelType.private or not any(role.id in ALLOWED_ROLE_IDS for role in message.author.roles)))
+    ):
         return
 
     # Check if no specific channels are specified or if the message is in one of the specified channels
