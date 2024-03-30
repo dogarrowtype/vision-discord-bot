@@ -67,7 +67,7 @@ async def describe_image(image_url):
                         {"type": "text", "text": STARTING_MESSAGE},
                         {
                             "type": "image_url",
-                            "image_url": {"url": f"data:image/jpeg;base64,{base64.b64encode(requests.get(image_url).content).decode('utf-8')}",
+                            "image_url": {"url": f"data:image/jpeg;base64,{base64.b64encode(requests.get(image_url).content).decode('utf-8')}"},
                         },
                     ],
                 }
