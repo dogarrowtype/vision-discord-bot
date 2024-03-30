@@ -110,7 +110,8 @@ async def on_message(message):
         if message.attachments:
             for attachment in message.attachments:
                 if any(attachment.filename.lower().endswith(ext) for ext in ['jpg', 'jpeg', 'png', 'gif', 'webp']):
-                    description_chunks = await describe_image(attachment.url)
+                    async with message.channel.typing():
+                        description_chunks = await describe_image(attachment.url)
 
                     original_message = None  # Store the original message containing the image attachment
                     
@@ -145,7 +146,8 @@ async def on_message(message):
 
             # Process each image URL
             for image_url in image_urls:
-                description_chunks = await describe_image(image_url)
+                async with message.channel.typing():
+                    description_chunks = await describe_image(image_url)
 
                 original_message = None  # Store the original message containing the image attachment
                 
