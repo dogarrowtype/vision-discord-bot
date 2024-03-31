@@ -8,6 +8,8 @@ import logging
 import re
 import base64
 import requests
+from PIL import Image
+from io import BytesIO
 
 # Load environment variables from .env file
 load_dotenv()
@@ -56,23 +58,36 @@ openai.api_base = OPENAI_BASE_URL
 async def describe_image(image_url):
     try:
         logger.info("Sending request to the model for image analysis...")
-        
-        # Send a chat completion request to OpenAI
+        # Check if the URL is from the allowed domain
+        allowed_domain = "cdn.discordapp.com"  # Replace with your desired domain
+        if not image_url.startswith(f"https://{allowed_domain}"):
+                raise ValueError("Invalid image URL domain")
+        # Fetch the image from the URL
+        response = requests.get(image_url)
+        image_data = response.content
+        # Convert the image to PNG format
+        image = Image.open(BytesIO(image_data))
+        png_buffer = BytesIO()
+        image.save(png_buffer, format="PNG")
+        png_data = png_buffer.getvalue()
+        # Encode the PNG image in base64
+        base64_data = base64.b64encode(png_data).decode("utf-8")
+        # Send the image to the vision API
         response = openai.ChatCompletion.create(
             model="gpt-4-vision-preview",
-            messages=[
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": STARTING_MESSAGE},
-                        {
-                            "type": "image_url",
-                            "image_url": {"url": f"data:image/jpeg;base64,{base64.b64encode(requests.get(image_url).content).decode('utf-8')}"},
-                        },
-                    ],
-                }
-            ],
-            max_tokens=MAX_TOKENS,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": STARTING_MESSAGE},
+                            {
+                                "type": "image_url",
+                                "image_url": {"url": f"data:image/png;base64,{base64_data}"},
+                            },
+                        ],
+                    }
+                ],
+                max_tokens=MAX_TOKENS,
         )
 
         logger.info("Received response from the model.")
