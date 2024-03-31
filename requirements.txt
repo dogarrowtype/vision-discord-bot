@@ -1,3 +1,4 @@
 discord
 openai==0.28
 requests
+pillow
