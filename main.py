@@ -126,68 +126,32 @@ async def on_message(message):
     if not CHANNEL_IDS or message.channel.id in CHANNEL_IDS:
         # Process attachments if any
         if message.attachments:
-            for attachment in message.attachments:
-                if any(attachment.filename.lower().endswith(ext) for ext in ['jpg', 'jpeg', 'png', 'gif', 'webp']):
-                    async with message.channel.typing():
+            async with message.channel.typing():
+                for attachment in message.attachments:
+                    if any(attachment.filename.lower().endswith(ext) for ext in ['jpg', 'jpeg', 'png', 'gif', 'webp']):
                         description_chunks = await describe_image(attachment.url)
-
-                    original_message = None  # Store the original message containing the image attachment
-                    
-                    # Send each description chunk as a separate message
-                    for i, chunk in enumerate(description_chunks):
-                        # Split message into multiple parts if exceeds the character limit
-                        while chunk:
-                            # Truncate the chunk to fit within the Discord message length limit
-                            truncated_chunk = chunk[:1800]
-                            # Send the message as a reply to the original message
-                            if i == 0:
-                                original_message = await message.reply(f"{MESSAGE_PREFIX} {truncated_chunk}")
-                                logger.info("Sending message to Discord...")
-                                logger.info("Message sent successfully.")
-                            else:
-                                # Send subsequent messages as replies to the original message
-                                await original_message.reply(truncated_chunk)
-                                logger.info("Sending message to Discord...")
-                                logger.info("Message sent successfully.")
-                            # Wait for a short delay before sending the next message to avoid rate-limiting
-                            await asyncio.sleep(1)
-                            chunk = chunk[1800:]
-
-        # Process image links if enabled
-        if REPLY_TO_LINKS:
-            # Extract URLs from the message content
-            message_content = message.content.lower()  # Convert message content to lowercase for case-insensitive matching
-            urls = re.findall(r'(https?://[^\s]+)', message_content)
-
-            # Filter out URLs ending with supported image file extensions
-            image_urls = [url for url in urls if url.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp'))]
-
-            # Process each image URL
-            for image_url in image_urls:
-                async with message.channel.typing():
-                    description_chunks = await describe_image(image_url)
-
-                original_message = None  # Store the original message containing the image attachment
-                
-                # Send each description chunk as a separate message
-                for i, chunk in enumerate(description_chunks):
-                    # Split message into multiple parts if exceeds the character limit
-                    while chunk:
-                        # Truncate the chunk to fit within the Discord message length limit
-                        truncated_chunk = chunk[:1800]
-                        # Send the message as a reply to the original message
-                        if i == 0:
-                            original_message = await message.reply(f"{MESSAGE_PREFIX} {truncated_chunk}")
-                            logger.info("Sending message to Discord...")
-                            logger.info("Message sent successfully.")
-                        else:
-                            # Send subsequent messages as replies to the original message
-                            await original_message.reply(truncated_chunk)
-                            logger.info("Sending message to Discord...")
-                            logger.info("Message sent successfully.")
-                        # Wait for a short delay before sending the next message to avoid rate-limiting
-                        await asyncio.sleep(1)
-                        chunk = chunk[1800:]
+    
+                        original_message = None  # Store the original message containing the image attachment
+                        
+                        # Send each description chunk as a separate message
+                        for i, chunk in enumerate(description_chunks):
+                            # Split message into multiple parts if exceeds the character limit
+                            while chunk:
+                                # Truncate the chunk to fit within the Discord message length limit
+                                truncated_chunk = chunk[:1800]
+                                # Send the message as a reply to the original message
+                                if i == 0:
+                                    original_message = await message.reply(f"{MESSAGE_PREFIX} {truncated_chunk}")
+                                    logger.info("Sending message to Discord...")
+                                    logger.info("Message sent successfully.")
+                                else:
+                                    # Send subsequent messages as replies to the original message
+                                    await original_message.reply(truncated_chunk)
+                                    logger.info("Sending message to Discord...")
+                                    logger.info("Message sent successfully.")
+                                # Wait for a short delay before sending the next message to avoid rate-limiting
+                                await asyncio.sleep(1)
+                                chunk = chunk[1800:]
 
 # Run the bot
 async def main():
