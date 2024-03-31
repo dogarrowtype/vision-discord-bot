@@ -49,7 +49,7 @@ logger = logging.getLogger(__name__)
 intents = discord.Intents.default()
 intents.messages = True
 intents.message_content = True
-bot = commands.Bot(command_prefix='!', intents=intents)
+bot =  discord.Client(intents=intents)
 
 # Ensure the OpenAI API key is set
 openai.api_key = OPENAI_API_KEY
@@ -190,4 +190,7 @@ async def on_message(message):
                         chunk = chunk[1800:]
 
 # Run the bot
-bot.run(DISCORD_BOT_TOKEN)
+async def main():
+    await bot.start(DISCORD_BOT_TOKEN)
+
+asyncio.run(main())
