@@ -84,6 +84,10 @@ async def describe_image(image_url, message_content):
         base64_data = base64.b64encode(png_data).decode("utf-8")
         # Send the image to the vision API
         async with aiohttp.ClientSession() as session:
+            headers = {
+                "Authorization": f"Bearer {OPENAI_API_KEY}",
+                "Content-Type": "application/json"
+            }
             payload = {
                 "model": "gpt-4-vision-preview",
                 "messages": [
@@ -101,19 +105,19 @@ async def describe_image(image_url, message_content):
                 "max_tokens": MAX_TOKENS,
             }
             
-            async with session.post(vision_model_url, json=payload, headers={'Authorization': 'Bearer ' + OPENAI_API_KEY}) as response:
+            async with session.post(vision_model_url, json=payload, headers=headers) as response:
                 data = await response.json()
                 logger.info("Received response from the model.")
                 # Extracting and returning the response
-                if data and len(data) > 0:
-                    if 'choices' in data[0] and 'message' in data[0]['choices'][0]:
-                        full_description = data[0]['choices'][0]['message']['content']
-                        
-                        # Split the description into chunks of max_message_length
-                        max_message_length = 1800  # Discord message character limit
-                        description_chunks = [full_description[i:i+max_message_length] for i in range(0, len(full_description), max_message_length)]
-                        
-                        return description_chunks
+                if 'choices' in data:
+                    # Extract the text from the first choice
+                    first_choice_text = data["choices"][0]["message"]["content"].strip()
+            
+                    # Split the text into chunks to fit within Discord message character limit
+                    max_message_length = 1800  # Discord message character limit
+                    description_chunks = [first_choice_text[i:i+max_message_length] for i in range(0, len(first_choice_text), max_message_length)]
+            
+                    return description_chunks
                 else:
                     return ["Failed to obtain a description from the model."]
 
