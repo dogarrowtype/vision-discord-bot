@@ -47,8 +47,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Initialize Discord bot with intents for messages and message content
-intents = discord.Intents.default() | Intents.message_content
-bot =  discord.Client(intents=intents)
+intents = Intents.default() | Intents.message_content
+bot = discord.Client(intents=intents)
 
 # Ensure the OpenAI API key is set
 openai.api_key = OPENAI_API_KEY
