@@ -84,7 +84,7 @@ async def describe_image(image_url, message_content):
         base64_data = base64.b64encode(png_data).decode("utf-8")
         # Send the image to the vision API
         messages = []
-        if CUSTOM_QUESTION:  # Replace CUSTOM_QUESTION with your condition
+        if message_content != "":  # Replace CUSTOM_QUESTION with your condition
             messages.append({
                 "role": "user",
                 "content": [
