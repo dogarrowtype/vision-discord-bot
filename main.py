@@ -46,9 +46,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Initialize Discord bot with intents for messages and message content
-intents = discord.Intents.default()
-intents.messages = True
-intents.message_content = True
+intents = discord.Intents.default() | Intents.message_content
 bot =  discord.Client(intents=intents)
 
 # Ensure the OpenAI API key is set
@@ -58,6 +56,7 @@ openai.api_base = OPENAI_BASE_URL
 async def describe_image(image_url, message_content):
     if message_content != "":
         IMAGE_PROMPT = message_content
+        logger.info(f"Custom message: {IMAGE_PROMPT}")
     else:
         IMAGE_PROMPT = STARTING_MESSAGE
     
@@ -84,7 +83,7 @@ async def describe_image(image_url, message_content):
                     {
                         "role": "user",
                         "content": [
-                            {"type": "text", "text": STARTING_MESSAGE},
+                            {"type": "text", "text": IMAGE_PROMPT},
                             {
                                 "type": "image_url",
                                 "image_url": {"url": f"data:image/png;base64,{base64_data}"},
