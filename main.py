@@ -55,7 +55,12 @@ bot =  discord.Client(intents=intents)
 openai.api_key = OPENAI_API_KEY
 openai.api_base = OPENAI_BASE_URL
 
-async def describe_image(image_url):
+async def describe_image(image_url, message_content):
+    if message_content is not "":
+        IMAGE_PROMPT = message_content
+    else:
+        IMAGE_PROMPT = STARTING_MESSAGE
+    
     try:
         logger.info("Sending request to the model for image analysis...")
         # Check if the URL is from the allowed domain
@@ -123,35 +128,38 @@ async def on_message(message):
         return
 
     # Check if no specific channels are specified or if the message is in one of the specified channels
-    if not CHANNEL_IDS or message.channel.id in CHANNEL_IDS:
-        # Process attachments if any
-        if message.attachments:
-            async with message.channel.typing():
-                for attachment in message.attachments:
-                    if any(attachment.filename.lower().endswith(ext) for ext in ['jpg', 'jpeg', 'png', 'gif', 'webp']):
-                        description_chunks = await describe_image(attachment.url)
-    
-                        original_message = None  # Store the original message containing the image attachment
-                        
-                        # Send each description chunk as a separate message
-                        for i, chunk in enumerate(description_chunks):
-                            # Split message into multiple parts if exceeds the character limit
-                            while chunk:
-                                # Truncate the chunk to fit within the Discord message length limit
-                                truncated_chunk = chunk[:1800]
-                                # Send the message as a reply to the original message
-                                if i == 0:
-                                    original_message = await message.reply(f"{MESSAGE_PREFIX} {truncated_chunk}")
-                                    logger.info("Sending message to Discord...")
-                                    logger.info("Message sent successfully.")
-                                else:
-                                    # Send subsequent messages as replies to the original message
-                                    await original_message.reply(truncated_chunk)
-                                    logger.info("Sending message to Discord...")
-                                    logger.info("Message sent successfully.")
-                                # Wait for a short delay before sending the next message to avoid rate-limiting
-                                await asyncio.sleep(1)
-                                chunk = chunk[1800:]
+    try:
+        if not CHANNEL_IDS or message.channel.id in CHANNEL_IDS:
+            # Process attachments if any
+            if message.attachments:
+                async with message.channel.typing():
+                    for attachment in message.attachments:
+                        if any(attachment.filename.lower().endswith(ext) for ext in ['jpg', 'jpeg', 'png', 'gif', 'webp']):
+                            description_chunks = await describe_image(attachment.url, message.content)
+        
+                            original_message = None  # Store the original message containing the image attachment
+                            
+                            # Send each description chunk as a separate message
+                            for i, chunk in enumerate(description_chunks):
+                                # Split message into multiple parts if exceeds the character limit
+                                while chunk:
+                                    # Truncate the chunk to fit within the Discord message length limit
+                                    truncated_chunk = chunk[:1800]
+                                    # Send the message as a reply to the original message
+                                    if i == 0:
+                                        original_message = await message.reply(f"{MESSAGE_PREFIX} {truncated_chunk}")
+                                        logger.info("Sending message to Discord...")
+                                        logger.info("Message sent successfully.")
+                                    else:
+                                        # Send subsequent messages as replies to the original message
+                                        await original_message.reply(truncated_chunk)
+                                        logger.info("Sending message to Discord...")
+                                        logger.info("Message sent successfully.")
+                                    # Wait for a short delay before sending the next message to avoid rate-limiting
+                                    await asyncio.sleep(1)
+                                    chunk = chunk[1800:]
+    except Exception as e:
+        logger.error(f"Error analyzing image with model: {e}")
 
 # Run the bot
 async def main():
