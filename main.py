@@ -47,6 +47,7 @@ REPLY_TO_LINKS = os.getenv('REPLY_TO_LINKS', 'true').lower() == 'true'
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+logger.info(f"Openai compatible vision api url: {vision_model_url}")
 
 # Initialize Discord bot with intents for messages and message content
 intents = discord.Intents.default()
