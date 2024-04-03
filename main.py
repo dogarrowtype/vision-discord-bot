@@ -107,32 +107,32 @@ async def describe_image(image_url, message_content):
                 ],
             })
 
-    # Send the request to the vision API
-    async with aiohttp.ClientSession() as session:
-        headers = {
-            "Authorization": f"Bearer {OPENAI_API_KEY}",
-            "Content-Type": "application/json"
-        }
-        payload = {
-            "model": "gpt-4-vision-preview",
-            "messages": messages,
-            "max_tokens": MAX_TOKENS,
-        }
-        async with session.post(vision_model_url, json=payload, headers=headers) as response:
-                data = await response.json()
-                logger.info("Received response from the model.")
-                # Extracting and returning the response
-                if 'choices' in data:
-                    # Extract the text from the first choice
-                    first_choice_text = data["choices"][0]["message"]["content"].strip()
-            
-                    # Split the text into chunks to fit within Discord message character limit
-                    max_message_length = 1800  # Discord message character limit
-                    description_chunks = [first_choice_text[i:i+max_message_length] for i in range(0, len(first_choice_text), max_message_length)]
-            
-                    return description_chunks
-                else:
-                    return ["Failed to obtain a description from the model."]
+        # Send the request to the vision API
+        async with aiohttp.ClientSession() as session:
+            headers = {
+                "Authorization": f"Bearer {OPENAI_API_KEY}",
+                "Content-Type": "application/json"
+            }
+            payload = {
+                "model": "gpt-4-vision-preview",
+                "messages": messages,
+                "max_tokens": MAX_TOKENS,
+            }
+            async with session.post(vision_model_url, json=payload, headers=headers) as response:
+                    data = await response.json()
+                    logger.info("Received response from the model.")
+                    # Extracting and returning the response
+                    if 'choices' in data:
+                        # Extract the text from the first choice
+                        first_choice_text = data["choices"][0]["message"]["content"].strip()
+                
+                        # Split the text into chunks to fit within Discord message character limit
+                        max_message_length = 1800  # Discord message character limit
+                        description_chunks = [first_choice_text[i:i+max_message_length] for i in range(0, len(first_choice_text), max_message_length)]
+                
+                        return description_chunks
+                    else:
+                        return ["Failed to obtain a description from the model."]
 
     except Exception as e:
         logger.error(f"Error analyzing image with model: {e}")
