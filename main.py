@@ -61,7 +61,7 @@ bot =  discord.Client(intents=intents)
 
 async def describe_image(image_url, message_content):
     if message_content != "":
-        IMAGE_PROMPT = (f"Please answer this question about the image. Only output raw information. Follow the question exactly.\nUser question: {message_content}\nPlease repeat the question, then answer it.")
+        IMAGE_PROMPT = (f"Please answer this question about the image. Only output raw information. Follow the question exactly.\nUser question: {message_content}")
         logger.info(f"Custom message: {IMAGE_PROMPT}")
     else:
         IMAGE_PROMPT = STARTING_MESSAGE
