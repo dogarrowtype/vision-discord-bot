@@ -1,11 +1,12 @@
 import os
 from dotenv import load_dotenv
 import discord
-from discord.ext import commands
+from discord import Intents
+#from discord.ext import commands
 import openai
 import asyncio
 import logging
-import re
+#import re
 import base64
 import requests
 from PIL import Image
