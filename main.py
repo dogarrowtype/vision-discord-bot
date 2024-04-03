@@ -2,12 +2,13 @@ import os
 from dotenv import load_dotenv
 import discord
 #from discord.ext import commands
-import openai
+#import openai
 import asyncio
 import logging
 #import re
 import base64
 import requests
+import aiohttp
 from PIL import Image
 from io import BytesIO
 
@@ -52,8 +53,8 @@ intents.message_content = True
 bot =  discord.Client(intents=intents)
 
 # Ensure the OpenAI API key is set
-openai.api_key = OPENAI_API_KEY
-openai.api_base = OPENAI_BASE_URL
+#openai.api_key = OPENAI_API_KEY
+#openai.api_base = OPENAI_BASE_URL
 
 async def describe_image(image_url, message_content):
     if message_content != "":
@@ -79,9 +80,10 @@ async def describe_image(image_url, message_content):
         # Encode the PNG image in base64
         base64_data = base64.b64encode(png_data).decode("utf-8")
         # Send the image to the vision API
-        response = openai.ChatCompletion.create(
-            model="gpt-4-vision-preview",
-                messages=[
+        async with aiohttp.ClientSession() as session:
+            payload = {
+                "model": "gpt-4-vision-preview",
+                "messages": [
                     {
                         "role": "user",
                         "content": [
@@ -93,10 +95,13 @@ async def describe_image(image_url, message_content):
                         ],
                     }
                 ],
-                max_tokens=MAX_TOKENS,
-        )
-
-        logger.info("Received response from the model.")
+                "max_tokens": MAX_TOKENS,
+            }
+            
+        async with session.post(OPENAI_BASE_URL, json=payload, headers={'Authorization': 'Bearer YOUR_API_KEY'}) as response:
+            data = await response.json()
+            logger.info("Received response from the model.")
+            return data
 
         # Extracting and returning the response
         if response.choices and len(response.choices) > 0:
