@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 import discord
-from discord import Intents
+from discord import Intents, Embed, Message, Attachment, File, ApplicationContext
 #from discord.ext import commands
 import openai
 import asyncio
