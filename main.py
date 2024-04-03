@@ -23,6 +23,8 @@ OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
 OPENAI_BASE_URL = os.getenv('OPENAI_BASE_URL')
 
+vision_model_url = (f"{OPENAI_BASE_URL}/v1/chat/completions")
+
 # Parse the list of channel IDs from the environment variable and convert it to a set
 CHANNEL_IDS = os.getenv('CHANNEL_IDS')
 if CHANNEL_IDS:
@@ -65,7 +67,6 @@ async def describe_image(image_url, message_content):
     
     try:
         logger.info("Sending request to the model for image analysis...")
-        vision_model_url = (f"{OPENAI_BASE_URL}/v1/chat/completions")
         # Check if the URL is from the allowed domain
         allowed_domain = "cdn.discordapp.com"  # Replace with your desired domain
         if not image_url.startswith(f"https://{allowed_domain}"):
