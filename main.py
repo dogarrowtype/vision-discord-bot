@@ -1,7 +1,6 @@
 import os
 from dotenv import load_dotenv
 import discord
-from discord import Intents, Embed, Message, Attachment, File, ApplicationContext
 #from discord.ext import commands
 import openai
 import asyncio
@@ -47,8 +46,10 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Initialize Discord bot with intents for messages and message content
-intents = Intents.default() | Intents.message_content
-bot = discord.Client(intents=intents)
+intents = discord.Intents.default()
+intents.messages = True
+intents.message_content = True
+bot =  discord.Client(intents=intents)
 
 # Ensure the OpenAI API key is set
 openai.api_key = OPENAI_API_KEY
