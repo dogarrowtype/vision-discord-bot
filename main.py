@@ -65,6 +65,7 @@ async def describe_image(image_url, message_content):
     
     try:
         logger.info("Sending request to the model for image analysis...")
+        vision_model_url = (f"{OPENAI_BASE_URL}/v1/chat/completions")
         # Check if the URL is from the allowed domain
         allowed_domain = "cdn.discordapp.com"  # Replace with your desired domain
         if not image_url.startswith(f"https://{allowed_domain}"):
@@ -98,7 +99,7 @@ async def describe_image(image_url, message_content):
                 "max_tokens": MAX_TOKENS,
             }
             
-        async with session.post(OPENAI_BASE_URL, json=payload, headers={'Authorization': 'Bearer YOUR_API_KEY'}) as response:
+        async with session.post(vision_model_url, json=payload, headers={'Authorization': 'Bearer YOUR_API_KEY'}) as response:
             data = await response.json()
             logger.info("Received response from the model.")
             return data
