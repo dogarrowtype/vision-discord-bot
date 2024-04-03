@@ -56,7 +56,7 @@ openai.api_key = OPENAI_API_KEY
 openai.api_base = OPENAI_BASE_URL
 
 async def describe_image(image_url, message_content):
-    if message_content is not "":
+    if message_content != "":
         IMAGE_PROMPT = message_content
     else:
         IMAGE_PROMPT = STARTING_MESSAGE
