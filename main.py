@@ -83,29 +83,42 @@ async def describe_image(image_url, message_content):
         # Encode the PNG image in base64
         base64_data = base64.b64encode(png_data).decode("utf-8")
         # Send the image to the vision API
-        async with aiohttp.ClientSession() as session:
-            headers = {
-                "Authorization": f"Bearer {OPENAI_API_KEY}",
-                "Content-Type": "application/json"
-            }
-            payload = {
-                "model": "gpt-4-vision-preview",
-                "messages": [
+        messages = []
+        if CUSTOM_QUESTION:  # Replace CUSTOM_QUESTION with your condition
+            messages.append({
+                "role": "user",
+                "content": [
                     {
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "image_url",
-                                "image_url": {"url": f"data:image/png;base64,{base64_data}"},
-                            },
-                            {"type": "text", "text": IMAGE_PROMPT},
-                        ],
-                    }
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/png;base64,{base64_data}"},
+                    },
+                    {"type": "text", "text": IMAGE_PROMPT},
                 ],
-                "max_tokens": MAX_TOKENS,
-            }
-            
-            async with session.post(vision_model_url, json=payload, headers=headers) as response:
+            })
+        else:
+            messages.append({
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": IMAGE_PROMPT},
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/png;base64,{base64_data}"},
+                    },
+                ],
+            })
+
+    # Send the request to the vision API
+    async with aiohttp.ClientSession() as session:
+        headers = {
+            "Authorization": f"Bearer {OPENAI_API_KEY}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "model": "gpt-4-vision-preview",
+            "messages": messages,
+            "max_tokens": MAX_TOKENS,
+        }
+        async with session.post(vision_model_url, json=payload, headers=headers) as response:
                 data = await response.json()
                 logger.info("Received response from the model.")
                 # Extracting and returning the response
