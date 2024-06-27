@@ -1,16 +1,14 @@
 import os
 from dotenv import load_dotenv
 import discord
-#from discord.ext import commands
-#import openai
 import asyncio
 import logging
-#import re
 import base64
 import requests
 import aiohttp
 from PIL import Image
 from io import BytesIO
+from gradio_client import Client, file
 
 # Load environment variables from .env file
 load_dotenv()
@@ -23,7 +21,10 @@ OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
 OPENAI_BASE_URL = os.getenv('OPENAI_BASE_URL')
 
-vision_model_url = (f"{OPENAI_BASE_URL}/v1/chat/completions")
+# Gradio API URL
+GRADIO_API_URL = os.getenv('GRADIO_API_URL')
+
+vision_model_url = f"{OPENAI_BASE_URL}/v1/chat/completions"
 
 # Parse the list of channel IDs from the environment variable and convert it to a set
 CHANNEL_IDS = os.getenv('CHANNEL_IDS')
@@ -44,6 +45,8 @@ MESSAGE_PREFIX = os.getenv('MESSAGE_PREFIX', "Image Description:")
 # Flag to determine if the bot should reply to image links
 REPLY_TO_LINKS = os.getenv('REPLY_TO_LINKS', 'true').lower() == 'true'
 
+allowed_domain = "cdn.discordapp.com"
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -53,38 +56,73 @@ logger.info(f"Openai compatible vision api url: {vision_model_url}")
 intents = discord.Intents.default()
 intents.messages = True
 intents.message_content = True
-bot =  discord.Client(intents=intents)
+bot = discord.Client(intents=intents)
 
-# Ensure the OpenAI API key is set
-#openai.api_key = OPENAI_API_KEY
-#openai.api_base = OPENAI_BASE_URL
+async def describe_image_with_gradio(image_url):
+    try:
+        logger.info("Sending request to the Gradio API for image analysis...")
+        
+        if not image_url.startswith(f"https://{allowed_domain}"):
+            raise ValueError("Invalid image URL domain")
+        
+        # Fetch the image from the URL
+        #response = requests.get(image_url)
+        #image_data = response.content
+        
+        #image = Image.open(BytesIO(image_data))
+        #png_buffer = BytesIO()
+        #image.save(png_buffer, format="PNG")
+        #png_data = png_buffer.getvalue()
+        
+        # Encode the image in base64
+        #base64_data = base64.b64encode(png_data).decode('utf-8')
+        
+        # Initialize Gradio client and send the request
+        client = Client(GRADIO_API_URL)
+        result = client.predict(
+            image=file(f"{image_url}"),
+            threshold=0.2,
+            api_name="/predict"
+        )
+        
+        # Process and return the result
+        tag_string = result[0]  # Assuming the first element is the "tag string"
+        return [tag_string]
+        
+    except Exception as e:
+        logger.error(f"Error analyzing image with Gradio API: {e}")
+        return ["Error analyzing image with Gradio API."]
 
-async def describe_image(image_url, message_content):
+async def describe_image_with_openai(image_url, message_content):
     if message_content != "":
-        IMAGE_PROMPT = (f"Please answer this question about the image. Only output raw information. Follow the question exactly.\nUser question: {message_content}")
+        IMAGE_PROMPT = f"Please answer this question about the image. Only output raw information. Follow the question exactly.\nUser question: {message_content}"
         logger.info(f"Custom message: {IMAGE_PROMPT}")
     else:
         IMAGE_PROMPT = STARTING_MESSAGE
     
     try:
         logger.info("Sending request to the model for image analysis...")
+        
         # Check if the URL is from the allowed domain
-        allowed_domain = "cdn.discordapp.com"  # Replace with your desired domain
         if not image_url.startswith(f"https://{allowed_domain}"):
-                raise ValueError("Invalid image URL domain")
+            raise ValueError("Invalid image URL domain")
+        
         # Fetch the image from the URL
         response = requests.get(image_url)
         image_data = response.content
+        
         # Convert the image to PNG format
         image = Image.open(BytesIO(image_data))
         png_buffer = BytesIO()
         image.save(png_buffer, format="PNG")
         png_data = png_buffer.getvalue()
+        
         # Encode the PNG image in base64
         base64_data = base64.b64encode(png_data).decode("utf-8")
+        
         # Send the image to the vision API
         messages = []
-        if message_content != "":  # Replace CUSTOM_QUESTION with your condition
+        if message_content != "":
             messages.append({
                 "role": "user",
                 "content": [
@@ -119,24 +157,27 @@ async def describe_image(image_url, message_content):
                 "max_tokens": MAX_TOKENS,
             }
             async with session.post(vision_model_url, json=payload, headers=headers) as response:
-                    data = await response.json()
-                    logger.info("Received response from the model.")
-                    # Extracting and returning the response
-                    if 'choices' in data:
-                        # Extract the text from the first choice
-                        first_choice_text = data["choices"][0]["message"]["content"].strip()
+                data = await response.json()
+                logger.info("Received response from the model.")
                 
-                        # Split the text into chunks to fit within Discord message character limit
-                        max_message_length = 1800  # Discord message character limit
-                        description_chunks = [first_choice_text[i:i+max_message_length] for i in range(0, len(first_choice_text), max_message_length)]
+                # Extracting and returning the response
+                if 'choices' in data:
+                    # Extract the text from the first choice
+                    first_choice_text = data["choices"][0]["message"]["content"].strip()
                 
-                        return description_chunks
-                    else:
-                        return ["Failed to obtain a description from the model."]
-
+                    # Split the text into chunks to fit within Discord message character limit
+                    max_message_length = 1800  # Discord message character limit
+                    description_chunks = [first_choice_text[i:i+max_message_length] for i in range(0, len(first_choice_text), max_message_length)]
+                
+                    return description_chunks
+                else:
+                    return ["Failed to obtain a description from the model."]
+                    
     except Exception as e:
         logger.error(f"Error analyzing image with model: {e}")
         return ["Error analyzing image with model."]
+
+
 
 @bot.event
 async def on_ready():
@@ -146,10 +187,7 @@ async def on_ready():
 @bot.event
 async def on_message(message):
     # Ignore messages sent by the bot and in dms
-    if (
-        message.author == bot.user
-        or message.channel.type == discord.ChannelType.private
-    ):
+    if message.author == bot.user or message.channel.type == discord.ChannelType.private:
         return
 
     # Check if no specific channels are specified or if the message is in one of the specified channels
@@ -160,8 +198,11 @@ async def on_message(message):
                 async with message.channel.typing():
                     for attachment in message.attachments:
                         if any(attachment.filename.lower().endswith(ext) for ext in ['jpg', 'jpeg', 'png', 'gif', 'webp']):
-                            description_chunks = await describe_image(attachment.url, message.content)
-        
+                            if message.content.startswith("tags"):
+                                description_chunks = await describe_image_with_gradio(attachment.url)
+                            else:
+                                description_chunks = await describe_image_with_openai(attachment.url, message.content)
+
                             original_message = None  # Store the original message containing the image attachment
                             
                             # Send each description chunk as a separate message
