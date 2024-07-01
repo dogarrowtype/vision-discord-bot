@@ -193,12 +193,14 @@ async def on_message(message):
     # Check if no specific channels are specified or if the message is in one of the specified channels
     try:
         if not CHANNEL_IDS or message.channel.id in CHANNEL_IDS:
+            if message.content.lower().startswith("quiet"):
+                pass  # Do nothing if message starts with "quiet"
             # Process attachments if any
             if message.attachments:
                 async with message.channel.typing():
                     for attachment in message.attachments:
                         if any(attachment.filename.lower().endswith(ext) for ext in ['jpg', 'jpeg', 'png', 'gif', 'webp']):
-                            if message.content.startswith("tags"):
+                            if message.content.lower().startswith("tags"):
                                 description_chunks = await describe_image_with_gradio(attachment.url)
                             else:
                                 description_chunks = await describe_image_with_openai(attachment.url, message.content)
