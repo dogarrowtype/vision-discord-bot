@@ -194,7 +194,7 @@ async def on_message(message):
     try:
         if not CHANNEL_IDS or message.channel.id in CHANNEL_IDS:
             if message.content.lower().startswith("quiet"):
-                pass  # Do nothing if message starts with "quiet"
+                return  # Do nothing if message starts with "quiet"
             # Process attachments if any
             if message.attachments:
                 async with message.channel.typing():
