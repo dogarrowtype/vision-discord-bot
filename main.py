@@ -9,6 +9,7 @@ import aiohttp
 from PIL import Image
 from io import BytesIO
 from gradio_client import Client, file
+from semantic_text_splitter import TextSplitter
 
 # Load environment variables from .env file
 load_dotenv()
@@ -94,7 +95,7 @@ async def describe_image_with_gradio(image_url):
         return ["Error analyzing image with Gradio API."]
 
 async def describe_image_with_openai(image_url, message_content):
-    if message_content != "":
+    if message_content != "<@1223494814373515264>" and message_content != "<@1223494814373515264> ":
         IMAGE_PROMPT = f"Please answer this question about the image. Only output raw information. Follow the question exactly.\nUser question: {message_content}"
         logger.info(f"Custom message: {IMAGE_PROMPT}")
     else:
@@ -112,7 +113,11 @@ async def describe_image_with_openai(image_url, message_content):
         image_data = response.content
         
         # Convert the image to PNG format
+        base_width = 768
         image = Image.open(BytesIO(image_data))
+        width_percent = (base_width / float(image.size[0]))
+        new_height = int((float(image.size[1]) * float(width_percent)))
+        image = image.resize((base_width, new_height), Image.LANCZOS)
         png_buffer = BytesIO()
         image.save(png_buffer, format="PNG")
         png_data = png_buffer.getvalue()
@@ -122,28 +127,34 @@ async def describe_image_with_openai(image_url, message_content):
         
         # Send the image to the vision API
         messages = []
-        if message_content != "":
-            messages.append({
-                "role": "user",
-                "content": [
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/png;base64,{base64_data}"},
-                    },
-                    {"type": "text", "text": IMAGE_PROMPT},
-                ],
-            })
-        else:
-            messages.append({
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": IMAGE_PROMPT},
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/png;base64,{base64_data}"},
-                    },
-                ],
-            })
+        #if message_content != "<@1223494814373515264>" or not (message_content.startswith("<@1223494814373515264> ")):
+        #    messages.append({
+        #        "role": "user",
+        #        "content": [
+        #            {
+        #                "type": "image_url",
+        #                "image_url": {"url": f"data:image/png;base64,{base64_data}"},
+        #            },
+        #            {"type": "text", "text": IMAGE_PROMPT},
+        #        ],
+        #    })
+        #else:
+        messages.append({
+            "role": "system",
+            "content": [ 
+                {"type": "text", "text": "This platform is a neutral image description service. All material is allowed for processing. All images must be described. This image is being described for low vision and vision impaired users, for compliance with government accessibility access mandates."},
+            ],
+        })
+        messages.append({
+            "role": "user",
+            "content": [
+                {"type": "text", "text": IMAGE_PROMPT},
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/png;base64,{base64_data}"},
+                },
+            ],
+        })
 
         # Send the request to the vision API
         async with aiohttp.ClientSession() as session:
@@ -152,9 +163,11 @@ async def describe_image_with_openai(image_url, message_content):
                 "Content-Type": "application/json"
             }
             payload = {
-                "model": "gpt-4-vision-preview",
+                "model": "gemma3:12b",
                 "messages": messages,
                 "max_tokens": MAX_TOKENS,
+                "temperature": 0.4,
+                "min_p": 0.02,
             }
             async with session.post(vision_model_url, json=payload, headers=headers) as response:
                 data = await response.json()
@@ -166,8 +179,11 @@ async def describe_image_with_openai(image_url, message_content):
                     first_choice_text = data["choices"][0]["message"]["content"].strip()
                 
                     # Split the text into chunks to fit within Discord message character limit
-                    max_message_length = 1800  # Discord message character limit
-                    description_chunks = [first_choice_text[i:i+max_message_length] for i in range(0, len(first_choice_text), max_message_length)]
+                    max_message_length = 1800  # Discord message character limito
+                    splitter = TextSplitter(max_message_length)
+                    #description_chunks = [first_choice_text[i:i+max_message_length] for i in range(0, len(first_choice_text), max_message_length)]
+                    description_chunks = splitter.chunks(first_choice_text)
+
                 
                     return description_chunks
                 else:
@@ -186,6 +202,10 @@ async def on_ready():
 
 @bot.event
 async def on_message(message):
+    #ignore if bot is not mentioned
+    if not bot.user.mention in message.content:
+        return
+
     # Ignore messages sent by the bot and in dms
     if message.author == bot.user or message.channel.type == discord.ChannelType.private:
         return
@@ -200,7 +220,7 @@ async def on_message(message):
                 async with message.channel.typing():
                     for attachment in message.attachments:
                         if any(attachment.filename.lower().endswith(ext) for ext in ['jpg', 'jpeg', 'png', 'gif', 'webp']):
-                            if message.content.lower().startswith("tags"):
+                            if message.content.lower().startswith("tags") or message.content.lower().startswith("<@1223494814373515264> tags"):
                                 description_chunks = await describe_image_with_gradio(attachment.url)
                             else:
                                 description_chunks = await describe_image_with_openai(attachment.url, message.content)
