@@ -1,5 +1,6 @@
 Forked, with a few changes. Can be used with other openai compatible vision apis. Doesn't respond to dms, has a crude typing indicator, sets a status.
 
+
 Mostly undocumented. Has hardcoded values. If you intend to use this for yourself, you need to change some things manually.
 
 ---
